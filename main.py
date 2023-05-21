@@ -8,7 +8,7 @@ import math
 from flask_cors import CORS 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["*"])
 
 app.config['JSON_AS_ASCII'] = False
 
@@ -40,7 +40,6 @@ def calculate(): #userが入力した緯度、経度と答えの緯度、経度�
     distance = np.linalg.norm(user_data - answer_data)
     user_point  = 100 * math.exp(-2*distance) #0 ～ 100 の間で点数を表示
 
-    # doc_ref = db.collection('users').document(data['user_id'])
     doc_ref = db.collection('data').document('users')
     doc_ref.set({
        data['user_id']:{ 'score': user_point } #firebase に user_point を送信
@@ -54,24 +53,32 @@ def calculate(): #userが入力した緯度、経度と答えの緯度、経度�
 def Ranking(): 
     doc_ref = db.collection('data').document('users') # firebaseを使用
     doc = doc_ref.get().to_dict()
-    
-    ''' ### doc example ###
+
+    ''' 
     doc = {
         "aaaaa": {"score": 11},
         "aiufuidaoufi": {"score": 100},
         "naninuneno": {"score": 25}
     }
     '''
-    # user_pointをソート, 戻り値は、ソートされた{"UserID":score}
+
     sorted_data = sorted(doc.items(), key=lambda x: x[1]["score"], reverse = True) 
 
-    #new_data = {k: v["score"] for k, v in sorted_data}
-    
-    sort_score = {}
-    for k, v in sorted_data:
-        sort_score[k] = v["score"]
+    '''
+    sorted_data = [("aiufuidaoufi", {"score": 100}), 
+                   ("naninuneno",   {"score": 25}), 
+                   ("aaaaa",        {"score":11})
+                ]
+    '''
+    sort_score = {}                 
+    for i in range(len(sorted_data)):
+        sort_score[i] = {"id": sorted_data[i][0], "score": sorted_data[i][1]["score"]} 
 
     return sort_score
+
+    ''' 
+    sort_score = {0: {'id': 'aiufuidaoufi', 'score': 100}, 1: {'id': 'naninuneno', 'score': 25}, 2: {'id': 'aaaaa', 'score': 11}}
+    '''
 
 if __name__ == '__main__':
     app.run(port=5011)
